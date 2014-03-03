@@ -63,10 +63,13 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, field, counte
     var oldDocFieldValue = _.dottedProperty(oldDoc, field);
     var newDocFieldValue = _.dottedProperty(doc, field);
 
-    if (oldDocFieldValue && newDocFieldValue !== oldDocFieldValue)
+    if (oldDocFieldValue && newDocFieldValue !== oldDocFieldValue) {
       decrement(oldDocFieldValue);
+      if (newDocFieldValue)
+        increment(newDocFieldValue);
+    }
 
-    if (newDocFieldValue)
+    if (! oldDocFieldValue && newDocFieldValue)
       increment(newDocFieldValue);
   });
 
