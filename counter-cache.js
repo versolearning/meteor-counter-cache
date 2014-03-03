@@ -3,7 +3,7 @@ var debug = function(str) {
 };
 
 // iterator for the property functions below
-var walker = function(node, part) { return node[part]; }
+var walker = function(node, part) { return node[part]; };
 
 _.mixin({
   dottedProperty: function(record, key) {
@@ -52,6 +52,8 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, field, counte
   collection.after.update(function(userId, doc, fieldNames, modifier, options) {
     var self = this;
     var oldDoc = self.previous;
+    var oldDocFieldValue;
+    var newDocFieldValue;
 
     // console.log(modifier);
     // console.log(fieldNames);
@@ -61,8 +63,8 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, field, counte
     if (modifier.$set) {
       // LocalCollection._modify(doc, modifier);
 
-      var oldDocFieldValue = _.dottedProperty(oldDoc, field);
-      var newDocFieldValue = _.dottedProperty(doc, field);
+      oldDocFieldValue = _.dottedProperty(oldDoc, field);
+      newDocFieldValue = _.dottedProperty(doc, field);
 
       if (oldDocFieldValue && newDocFieldValue !== oldDocFieldValue)
         decrement(oldDocFieldValue);
@@ -71,7 +73,7 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, field, counte
     }
     
     if (modifier.$unset) {
-      var oldDocFieldValue = _.dottedProperty(oldDoc, field);
+      oldDocFieldValue = _.dottedProperty(oldDoc, field);
       decrement(oldDocFieldValue);
     }
   });
