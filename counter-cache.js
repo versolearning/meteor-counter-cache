@@ -44,7 +44,7 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, field, counte
   };
 
   collection.after.insert(function(userId, doc) {
-    fieldValue = _.dottedProperty(doc, field);
+    var fieldValue = _.dottedProperty(doc, field);
     if (fieldValue)
       increment(fieldValue);
   });
@@ -52,33 +52,27 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, field, counte
   collection.after.update(function(userId, doc, fieldNames, modifier, options) {
     var self = this;
     var oldDoc = self.previous;
-    var oldDocFieldValue;
-    var newDocFieldValue;
 
     // console.log(modifier);
     // console.log(fieldNames);
     // console.log(self.previous);
     // console.log(doc);
 
-    if (modifier.$set) {
-      // LocalCollection._modify(doc, modifier);
+    // LocalCollection._modify(doc, modifier);
 
-      oldDocFieldValue = _.dottedProperty(oldDoc, field);
-      newDocFieldValue = _.dottedProperty(doc, field);
+    var oldDocFieldValue = _.dottedProperty(oldDoc, field);
+    var newDocFieldValue = _.dottedProperty(doc, field);
 
-      if (oldDocFieldValue && newDocFieldValue !== oldDocFieldValue)
-        decrement(oldDocFieldValue);
-
-      increment(newDocFieldValue);
-    }
-    
-    if (modifier.$unset) {
-      oldDocFieldValue = _.dottedProperty(oldDoc, field);
+    if (oldDocFieldValue && newDocFieldValue !== oldDocFieldValue)
       decrement(oldDocFieldValue);
-    }
+
+    if (newDocFieldValue)
+      increment(newDocFieldValue);
   });
 
   collection.after.remove(function(userId, doc) {
-    decrement(_.dottedProperty(doc, field));
+    var fieldValue = _.dottedProperty(doc, field);
+    if (fieldValue)
+      decrement(fieldValue);
   });
 };

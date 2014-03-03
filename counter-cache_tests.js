@@ -18,7 +18,6 @@ Tinytest.add('Counter cache - works', function(test) {
   test.equal(author.booksCount, 1);
   
   Books.remove(bookId);
-  
   var author = Authors.findOne(authorId);
   // remove
   test.equal(author.booksCount, 0);
@@ -59,5 +58,8 @@ Tinytest.add('Counter cache - works', function(test) {
   Books.update(bookId, { $unset: { authorId: '' }});
   
   var author = Authors.findOne(authorId);
+  test.equal(author.booksCount, 0);
+
+  Books.update(bookId, { $set: { nothing: true }});
   test.equal(author.booksCount, 0);
 });
