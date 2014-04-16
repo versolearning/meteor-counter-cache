@@ -1,8 +1,8 @@
 Tinytest.add('Counter cache - foreignKey works', function(test) {
-  Authors = new Meteor.Collection('authors');
-  Books = new Meteor.Collection('books');
+  Authors = new Meteor.Collection('authors' + test.id);
+  Books = new Meteor.Collection('books' + test.id);
 
-  Authors.maintainCountOf(Books, 'authorId');
+  Authors.maintainCountOf(Books, 'authorId', 'booksCount');
 
   var authorId = Authors.insert({
     name: 'Charles Darwin'
@@ -76,13 +76,10 @@ Tinytest.add('Counter cache - foreignKey works', function(test) {
 });
 
 Tinytest.add('Counter cache - foreignKey lookup function', function(test) {
-  Books.remove();
-  Authors.remove();
-
-  Publishers = new Meteor.Collection('publishers');
+  Publishers = new Meteor.Collection('publishers' + test.id);
   Publishers.maintainCountOf(Books, function(doc) {
     return Authors.findOne(doc.authorId).publisherId;
-  });
+  }, 'booksCount');
 
   var publisherId = Publishers.insert({
     name: 'Good Books'

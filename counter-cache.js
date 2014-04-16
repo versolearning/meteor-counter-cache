@@ -67,13 +67,13 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, foreignKey, c
     var oldDocForeignKeyValue = resolveForeignKey(oldDoc, foreignKey);
     var newDocForeignKeyValue = resolveForeignKey(doc, foreignKey);
 
-    if (oldDocForeignKeyValue && newDocForeignKeyValue !== oldDocForeignKeyValue) {
-      decrement(oldDocForeignKeyValue);
-      if (newDocForeignKeyValue)
-        increment(newDocForeignKeyValue);
-    }
+    if (oldDocForeignKeyValue === newDocForeignKeyValue)
+      return;
 
-    if (! oldDocForeignKeyValue && newDocForeignKeyValue)
+    if (oldDocForeignKeyValue)
+      decrement(oldDocForeignKeyValue);
+
+    if (newDocForeignKeyValue)
       increment(newDocForeignKeyValue);
   });
 
