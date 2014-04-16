@@ -11,7 +11,11 @@ _.mixin({
   }
 });
 
-Meteor.Collection.prototype.maintainCountOf = function(collection, field, counterField) {
+var resolveForeignKey = function(doc, foreignKey) {
+  return _.isFunction(foreignKey) ? foreignKey(doc) : _.dottedProperty(doc, foreignKey);
+};
+
+Meteor.Collection.prototype.maintainCountOf = function(collection, foreignKey, counterField) {
   var self = this;
 
   // what is Meteor.users an instanceof ?
@@ -19,8 +23,8 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, field, counte
   //   throw new Error("Expected first parameter to be a Meteor Collection");
   if (typeof collection === 'undefined')
     throw new Error("Missing parameter: collection");
-  if (typeof field === 'undefined')
-    throw new Error("Missing parameter: field name");
+  if (typeof foreignKey === 'undefined')
+    throw new Error("Missing parameter: foreignKey");
 
   if (typeof counterField === 'undefined')
     counterField = collection._name + 'Count';
@@ -44,9 +48,9 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, field, counte
   };
 
   collection.after.insert(function(userId, doc) {
-    var fieldValue = _.dottedProperty(doc, field);
-    if (fieldValue)
-      increment(fieldValue);
+    var foreignKeyValue = resolveForeignKey(doc, foreignKey);
+    if (foreignKeyValue)
+      increment(foreignKeyValue);
   });
 
   collection.after.update(function(userId, doc, fieldNames, modifier, options) {
@@ -60,22 +64,22 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, field, counte
 
     // LocalCollection._modify(doc, modifier);
 
-    var oldDocFieldValue = _.dottedProperty(oldDoc, field);
-    var newDocFieldValue = _.dottedProperty(doc, field);
+    var oldDocForeignKeyValue = resolveForeignKey(oldDoc, foreignKey);
+    var newDocForeignKeyValue = resolveForeignKey(doc, foreignKey);
 
-    if (oldDocFieldValue && newDocFieldValue !== oldDocFieldValue) {
-      decrement(oldDocFieldValue);
-      if (newDocFieldValue)
-        increment(newDocFieldValue);
+    if (oldDocForeignKeyValue && newDocForeignKeyValue !== oldDocForeignKeyValue) {
+      decrement(oldDocForeignKeyValue);
+      if (newDocForeignKeyValue)
+        increment(newDocForeignKeyValue);
     }
 
-    if (! oldDocFieldValue && newDocFieldValue)
-      increment(newDocFieldValue);
+    if (! oldDocForeignKeyValue && newDocForeignKeyValue)
+      increment(newDocForeignKeyValue);
   });
 
   collection.after.remove(function(userId, doc) {
-    var fieldValue = _.dottedProperty(doc, field);
-    if (fieldValue)
-      decrement(fieldValue);
+    var foreignKeyValue = resolveForeignKey(doc, foreignKey);
+    if (foreignKeyValue)
+      decrement(foreignKeyValue);
   });
 };
