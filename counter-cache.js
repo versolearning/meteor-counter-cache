@@ -15,7 +15,14 @@ var resolveForeignKey = function(doc, foreignKey) {
   return _.isFunction(foreignKey) ? foreignKey(doc) : _.dottedProperty(doc, foreignKey);
 };
 
-Meteor.Collection.prototype.maintainCountOf = function(collection, foreignKey, counterField) {
+var applyFilter = function(doc, filter) {
+  if (_.isFunction(filter))
+    return filter(doc);
+
+  return true;
+};
+
+Meteor.Collection.prototype.maintainCountOf = function(collection, foreignKey, counterField, filter) {
   var self = this;
 
   // what is Meteor.users an instanceof ?
@@ -49,7 +56,7 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, foreignKey, c
 
   collection.after.insert(function(userId, doc) {
     var foreignKeyValue = resolveForeignKey(doc, foreignKey);
-    if (foreignKeyValue)
+    if (foreignKeyValue && applyFilter(doc, filter))
       increment(foreignKeyValue);
   });
 
@@ -67,19 +74,22 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, foreignKey, c
     var oldDocForeignKeyValue = resolveForeignKey(oldDoc, foreignKey);
     var newDocForeignKeyValue = resolveForeignKey(doc, foreignKey);
 
-    if (oldDocForeignKeyValue === newDocForeignKeyValue)
+    var filterApplyOldValue = applyFilter(oldDoc, filter);
+    var filterApplyNewValue = applyFilter(doc, filter);
+
+    if (oldDocForeignKeyValue === newDocForeignKeyValue && filterApplyOldValue === filterApplyNewValue)
       return;
 
-    if (oldDocForeignKeyValue)
+    if (oldDocForeignKeyValue && filterApplyOldValue)
       decrement(oldDocForeignKeyValue);
 
-    if (newDocForeignKeyValue)
+    if (newDocForeignKeyValue && filterApplyNewValue)
       increment(newDocForeignKeyValue);
   });
 
   collection.after.remove(function(userId, doc) {
     var foreignKeyValue = resolveForeignKey(doc, foreignKey);
-    if (foreignKeyValue)
+    if (foreignKeyValue && applyFilter(doc, filter))
       decrement(foreignKeyValue);
   });
 };
