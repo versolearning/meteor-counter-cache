@@ -134,49 +134,99 @@ Tinytest.add('Counter cache - foreignKey lookup function', function(test) {
   // all books related to this author.
 });
 
-Tinytest.add('Counter cache - filter and foreignKey work together', function(test) {
-  Publishers = new Meteor.Collection('publishers' + test.id);
+Tinytest.add('Counter cache - filter and foreignKey - add and remove', function(test) {
   Authors = new Meteor.Collection('authors' + test.id);
   Books = new Meteor.Collection('books' + test.id);
-
-  var filter = function(doc) {
-    return doc.isFiction;
-  };
-
+  var filter = function(doc) { return doc.isFiction; };
   Authors.maintainCountOf(Books, 'authorId', 'fictionBooksCount', filter);
 
   var authorId = Authors.insert({
     name: 'Test Author'
   });
+  
+  // Filter increments on insert
   var book1Id = Books.insert({
     name: 'How to test your book counters',
     authorId: authorId,
     isFiction: true
   });
+  test.equal(Authors.findOne(authorId).fictionBooksCount, 1);
 
-  var author = Authors.findOne(authorId);
-
-  // Filter increments on insert
-  test.equal(author.fictionBooksCount, 1);
-
+  // Filter shouldn't have incremented with this book
   var book2Id = Books.insert({
     name: 'How to test your book counters again',
     authorId: authorId,
     isFiction: false
   });
+  test.equal(Authors.findOne(authorId).fictionBooksCount, 1);
 
-  author = Authors.findOne(authorId);
+  // filter decrements on delete
+  Books.remove(book1Id);
+  test.equal(Authors.findOne(authorId).fictionBooksCount, 0);
 
-  // Filter shouldn't have incremented with this book
-  test.equal(author.fictionBooksCount, 1);
+  // but not if it's false
+  Books.remove(book2Id);
+  test.equal(Authors.findOne(authorId).fictionBooksCount, 0);
+});
 
-  // do a remove test on both cases
+Tinytest.add('Counter cache - filter and foreignKey - changes', function(test) {
+  Authors = new Meteor.Collection('authors' + test.id);
+  Books = new Meteor.Collection('books' + test.id);
+  var filter = function(doc) { return doc.isFiction; };
+  Authors.maintainCountOf(Books, 'authorId', 'fictionBooksCount', filter);
 
+  var author1Id = Authors.insert({
+    name: 'Test Author',
+    fictionBooksCount: 0
+  });
+  var author2Id = Authors.insert({
+    name: 'Test Author 2',
+    fictionBooksCount: 0
+  });
+  var bookId = Books.insert({
+    name: 'How to test your book counters',
+    authorId: author1Id,
+    isFiction: true
+  });
+  test.equal(Authors.findOne(author1Id).fictionBooksCount, 1);
+  
+  // 1. an irrelevant change
+  Books.update(bookId, {$set: {name: 'A new way to test'}});
+  test.equal(Authors.findOne(author1Id).fictionBooksCount, 1);
+  test.equal(Authors.findOne(author2Id).fictionBooksCount, 0);
+  
+  // 2. change it to no longer match
+  Books.update(bookId, {$set: {isFiction: false}});
+  test.equal(Authors.findOne(author1Id).fictionBooksCount, 0);
+  test.equal(Authors.findOne(author2Id).fictionBooksCount, 0);
+  
+  // 3. an irrelevant change
+  Books.update(bookId, {$set: {name: 'A new way to test again'}});
+  test.equal(Authors.findOne(author1Id).fictionBooksCount, 0);
+  test.equal(Authors.findOne(author2Id).fictionBooksCount, 0);
+  
+  // 4. change author without changing matching
+  Books.update(bookId, {$set: {authorId: author2Id}});
+  test.equal(Authors.findOne(author1Id).fictionBooksCount, 0);
+  test.equal(Authors.findOne(author2Id).fictionBooksCount, 0);
+  
+  // 5. change to now match
+  Books.update(bookId, {$set: {isFiction: true}});
+  test.equal(Authors.findOne(author1Id).fictionBooksCount, 0);
+  test.equal(Authors.findOne(author2Id).fictionBooksCount, 1);
+  
+  // 6. change author without changing matching
+  Books.update(bookId, {$set: {authorId: author1Id}});
+  test.equal(Authors.findOne(author1Id).fictionBooksCount, 1);
+  test.equal(Authors.findOne(author2Id).fictionBooksCount, 0);
 
-  // update tests
-
-  // 1. updating but not changing both a matching and non matching filter
-  // 2. updating from matching to non-matching without changing author
-  // 3. 
-
+  // 7. change author while changing matching
+  Books.update(bookId, {$set: {authorId: author2Id, isFiction: false}});
+  test.equal(Authors.findOne(author1Id).fictionBooksCount, 0);
+  test.equal(Authors.findOne(author2Id).fictionBooksCount, 0);
+  
+  // 8. change author while changing matching
+  Books.update(bookId, {$set: {authorId: author1Id, isFiction: true}});
+  test.equal(Authors.findOne(author1Id).fictionBooksCount, 1);
+  test.equal(Authors.findOne(author2Id).fictionBooksCount, 0);
 });
