@@ -7,4 +7,4 @@ Cache the counts of an associated collection.
 
 MIT. (c) Percolate Studio
 
-publish-counts was developed as part of the [Verso](http://versoapp.com) project.
+counter-cache was developed as part of the [Verso](http://versoapp.com) project.
