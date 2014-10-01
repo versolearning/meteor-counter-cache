@@ -22,18 +22,15 @@ var applyFilter = function(doc, filter) {
   return true;
 };
 
-Meteor.Collection.prototype.maintainCountOf = function(collection, foreignKey, counterField, filter) {
+Mongo.Collection.prototype.maintainCountOf = function(collection, foreignKey, counterField, filter) {
   var self = this;
 
-  // what is Meteor.users an instanceof ?
-  // if (! (collection instanceof Meteor.Collection))
-  //   throw new Error("Expected first parameter to be a Meteor Collection");
-  if (typeof collection === 'undefined')
-    throw new Error("Missing parameter: collection");
-  if (typeof foreignKey === 'undefined')
-    throw new Error("Missing parameter: foreignKey");
+  if (! (collection instanceof Mongo.Collection))
+    throw new Error("Expected first argument to be a Mongo Collection");
+  if (! foreignKey)
+    throw new Error("Missing argument: foreignKey");
 
-  if (typeof counterField === 'undefined')
+  if (! counterField)
     counterField = collection._name + 'Count';
 
   debug('setup counts of `' + collection._name + '` onto `' + this._name + '` with counter field `' + counterField + '`');

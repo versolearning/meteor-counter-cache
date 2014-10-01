@@ -1,13 +1,19 @@
 Package.describe({
-  summary: 'Cache the counts of an associated collection.'
+  summary: "Cache the counts of an associated collection",
+  version: "0.2.0",
+  git: "https://github.com/percolatestudio/meteor-counter-cache.git"
 });
 
-Package.on_use(function(api) {
-  api.use(['collection-hooks', 'underscore']);
+Package.onUse(function(api) {
+  api.use([
+    'matb33:collection-hooks@0.7.6',
+    'underscore@1.0.0',
+    'mongo@1.0.6'
+  ]);
   api.add_files('counter-cache.js', ['client', 'server']);
 });
 
-Package.on_test(function(api) {
-  api.use(['tinytest', 'counter-cache']);
+Package.onTest(function(api) {
+  api.use(['tinytest', 'dburles:counter-cache']);
   api.add_files('counter-cache_tests.js', 'server');
 });

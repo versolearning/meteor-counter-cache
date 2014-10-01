@@ -1,6 +1,6 @@
 Tinytest.add('Counter cache - foreignKey works', function(test) {
-  Authors = new Meteor.Collection('authors' + test.id);
-  Books = new Meteor.Collection('books' + test.id);
+  Authors = new Mongo.Collection('authors' + test.id);
+  Books = new Mongo.Collection('books' + test.id);
 
   Authors.maintainCountOf(Books, 'authorId', 'booksCount');
 
@@ -88,7 +88,7 @@ Tinytest.add('Counter cache - foreignKey works', function(test) {
 });
 
 Tinytest.add('Counter cache - foreignKey lookup function', function(test) {
-  Publishers = new Meteor.Collection('publishers' + test.id);
+  Publishers = new Mongo.Collection('publishers' + test.id);
   Publishers.maintainCountOf(Books, function(doc) {
     return Authors.findOne(doc.authorId).publisherId;
   }, 'booksCount');
@@ -135,8 +135,8 @@ Tinytest.add('Counter cache - foreignKey lookup function', function(test) {
 });
 
 Tinytest.add('Counter cache - filter and foreignKey - add and remove', function(test) {
-  Authors = new Meteor.Collection('authors' + test.id);
-  Books = new Meteor.Collection('books' + test.id);
+  Authors = new Mongo.Collection('authors' + test.id);
+  Books = new Mongo.Collection('books' + test.id);
   var filter = function(doc) { return doc.isFiction; };
   Authors.maintainCountOf(Books, 'authorId', 'fictionBooksCount', filter);
 
@@ -170,8 +170,8 @@ Tinytest.add('Counter cache - filter and foreignKey - add and remove', function(
 });
 
 Tinytest.add('Counter cache - filter and foreignKey - changes', function(test) {
-  Authors = new Meteor.Collection('authors' + test.id);
-  Books = new Meteor.Collection('books' + test.id);
+  Authors = new Mongo.Collection('authors' + test.id);
+  Books = new Mongo.Collection('books' + test.id);
   var filter = function(doc) { return doc.isFiction; };
   Authors.maintainCountOf(Books, 'authorId', 'fictionBooksCount', filter);
 
