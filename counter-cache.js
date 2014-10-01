@@ -12,6 +12,7 @@ _.mixin({
 });
 
 var resolveForeignKey = function(doc, foreignKey) {
+  // console.log(doc, foreignKey);
   return _.isFunction(foreignKey) ? foreignKey(doc) : _.dottedProperty(doc, foreignKey);
 };
 
@@ -22,7 +23,7 @@ var applyFilter = function(doc, filter) {
   return true;
 };
 
-Meteor.Collection.prototype.maintainCountOf = function(collection, foreignKey, counterField, filter) {
+Mongo.Collection.prototype.maintainCountOf = function(collection, foreignKey, counterField, filter) {
   var self = this;
 
   // what is Meteor.users an instanceof ?
@@ -54,15 +55,17 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, foreignKey, c
     self.update(_id, modifier);
   };
 
-  collection.after.insert(function(userId, doc) {
+  collection.afterInsert(function(doc) {
     var foreignKeyValue = resolveForeignKey(doc, foreignKey);
     if (foreignKeyValue && applyFilter(doc, filter))
       increment(foreignKeyValue);
   });
 
-  collection.after.update(function(userId, doc, fieldNames, modifier, options) {
+  collection.afterUpdate({ needsPrevious: true }, function(_id, modifier) {
     var self = this;
-    var oldDoc = self.previous;
+    var oldDocs = this.previous;
+
+    // console.log(oldDoc.fetch()[0]);
 
     // console.log(modifier);
     // console.log(fieldNames);
@@ -71,25 +74,32 @@ Meteor.Collection.prototype.maintainCountOf = function(collection, foreignKey, c
 
     // LocalCollection._modify(doc, modifier);
 
-    var oldDocForeignKeyValue = resolveForeignKey(oldDoc, foreignKey);
-    var newDocForeignKeyValue = resolveForeignKey(doc, foreignKey);
+    _.each(oldDocs, function(oldDoc) {
+      var doc = collection.findOne(_id);
+      var oldDocForeignKeyValue = resolveForeignKey(oldDoc, foreignKey);
+      var newDocForeignKeyValue = resolveForeignKey(doc, foreignKey);
 
-    var filterApplyOldValue = applyFilter(oldDoc, filter);
-    var filterApplyNewValue = applyFilter(doc, filter);
+      var filterApplyOldValue = applyFilter(oldDoc, filter);
+      var filterApplyNewValue = applyFilter(doc, filter);
 
-    if (oldDocForeignKeyValue === newDocForeignKeyValue && filterApplyOldValue === filterApplyNewValue)
-      return;
+      if (oldDocForeignKeyValue === newDocForeignKeyValue && filterApplyOldValue === filterApplyNewValue)
+        return;
 
-    if (oldDocForeignKeyValue && filterApplyOldValue)
-      decrement(oldDocForeignKeyValue);
+      if (oldDocForeignKeyValue && filterApplyOldValue)
+        decrement(oldDocForeignKeyValue);
 
-    if (newDocForeignKeyValue && filterApplyNewValue)
-      increment(newDocForeignKeyValue);
+      if (newDocForeignKeyValue && filterApplyNewValue)
+        increment(newDocForeignKeyValue);
+    });
   });
 
-  collection.after.remove(function(userId, doc) {
-    var foreignKeyValue = resolveForeignKey(doc, foreignKey);
-    if (foreignKeyValue && applyFilter(doc, filter))
-      decrement(foreignKeyValue);
+  collection.afterRemove({ needsPrevious: true }, function(_id) {
+    var docs = this.previous;
+
+    _.each(docs, function(doc) {
+      var foreignKeyValue = resolveForeignKey(doc, foreignKey);
+      if (foreignKeyValue && applyFilter(doc, filter))
+        decrement(foreignKeyValue);
+    });
   });
 };

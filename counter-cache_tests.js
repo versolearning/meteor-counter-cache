@@ -1,6 +1,6 @@
 Tinytest.add('Counter cache - foreignKey works', function(test) {
-  Authors = new Meteor.Collection('authors' + test.id);
-  Books = new Meteor.Collection('books' + test.id);
+  Authors = new Mongo.Collection('authors' + test.id);
+  Books = new Mongo.Collection('books' + test.id);
 
   Authors.maintainCountOf(Books, 'authorId', 'booksCount');
 
