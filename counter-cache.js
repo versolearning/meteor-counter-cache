@@ -2,17 +2,12 @@ var debug = function(str) {
   // console.log('counter-cache: ' + str);
 };
 
-// iterator for the property functions below
-var walker = function(node, part) { return node[part]; };
-
-_.mixin({
-  dottedProperty: function(record, key) {
-    return _.reduce(key.split('.'), walker, record || {});
-  }
-});
-
 var resolveForeignKey = function(doc, foreignKey) {
-  return _.isFunction(foreignKey) ? foreignKey(doc) : _.dottedProperty(doc, foreignKey);
+  if (_.isFunction(foreignKey)) {
+    return foreignKey(doc);
+  } else {
+    return Meteor._get.apply(Meteor, [].concat(doc, foreignKey.split('.')));
+  }
 };
 
 var applyFilter = function(doc, filter) {
@@ -22,71 +17,80 @@ var applyFilter = function(doc, filter) {
   return true;
 };
 
-Mongo.Collection.prototype.maintainCountOf = function(collection, foreignKey, counterField, filter) {
-  var self = this;
 
-  if (! (collection instanceof Mongo.Collection))
-    throw new Error("Expected first argument to be a Mongo Collection");
-  if (! foreignKey)
-    throw new Error("Missing argument: foreignKey");
-
-  if (! counterField)
-    counterField = collection._name + 'Count';
-
-  debug('setup counts of `' + collection._name + '` onto `' + this._name + '` with counter field `' + counterField + '`');
-
-  var modifier = { $inc: {}};
-  var increment = function(_id) {
-    debug('increment ' + _id);
-    if (! _id) return;
-
-    modifier.$inc[counterField] = 1;
-    self.update(_id, modifier);
-  };
-  var decrement = function(_id) {
-    debug('decrement ' + _id);
-    if (! _id) return;
-
-    modifier.$inc[counterField] = -1;
-    self.update(_id, modifier);
-  };
-
-  collection.after.insert(function(userId, doc) {
-    var foreignKeyValue = resolveForeignKey(doc, foreignKey);
-    if (foreignKeyValue && applyFilter(doc, filter))
-      increment(foreignKeyValue);
+CounterCache = function(options) {
+  // could probably be more flexible in how we establish relationships
+  check(options, {
+    target: {
+      collection: Mongo.Collection,
+      counter: String
+    },
+    source: {
+      collection: Mongo.Collection,
+      foreignKey: Match.OneOf(String, Function),
+      filter: Match.Optional(Function)
+    }
   });
+  
+  // debug('setup counts of `' + collection._name + '` onto `' + this._name + '` with counter field `' + counterField + '`');
+  
+  // private functions (going all crockford on this one)
+  var increment = function(_id, direction) {
+    var mod = {$inc: {}};
+    mod.$inc[options.target.counter] = direction || 1;
+    options.target.collection.update(_id, mod);
+  }
+  
+  var getDoc = function(id) {
+    var fields = {};
+    // optimization -- if we don't have special foreignKey or filter functions,
+    //   we know we only need the foreign key from the db
+    if (! options.source.filter && ! _.isFunction(options.source.foreignKey))
+      fields[options.source.foreignKey] = 1;
+    return options.source.collection.findOne(id, {fields: fields});
+  }
+  
+  var resolve = function(doc) {
+    return resolveForeignKey(doc, options.source.foreignKey);
+  }
+  
+  var filter = function(doc) {
+    return applyFilter(doc, options.source.filter);
+  }
+  
+  _.extend(this, {
+    insert: function(doc) {
+      var foreignKeyValue = resolve(doc);
+      if (foreignKeyValue && filter(doc))
+        increment(foreignKeyValue, 1);
+    },
+    update: function(id, modifier) {
+      var oldDoc = getDoc(id);
 
-  collection.after.update(function(userId, doc, fieldNames, modifier, options) {
-    var self = this;
-    var oldDoc = self.previous;
+      var newDoc = EJSON.clone(oldDoc);
+      LocalCollection._modify(newDoc, modifier);
 
-    // console.log(modifier);
-    // console.log(fieldNames);
-    // console.log(self.previous);
-    // console.log(doc);
+        var oldDocForeignKeyValue = resolve(oldDoc);
+      var newDocForeignKeyValue = resolve(newDoc);
 
-    // LocalCollection._modify(doc, modifier);
+      var filterApplyOldValue = filter(oldDoc);
+      var filterApplyNewValue = filter(newDoc);
 
-    var oldDocForeignKeyValue = resolveForeignKey(oldDoc, foreignKey);
-    var newDocForeignKeyValue = resolveForeignKey(doc, foreignKey);
+      if (oldDocForeignKeyValue === newDocForeignKeyValue && 
+          filterApplyOldValue === filterApplyNewValue)
+        return;
 
-    var filterApplyOldValue = applyFilter(oldDoc, filter);
-    var filterApplyNewValue = applyFilter(doc, filter);
+      if (oldDocForeignKeyValue && filterApplyOldValue)
+        increment(oldDocForeignKeyValue, -1);
 
-    if (oldDocForeignKeyValue === newDocForeignKeyValue && filterApplyOldValue === filterApplyNewValue)
-      return;
-
-    if (oldDocForeignKeyValue && filterApplyOldValue)
-      decrement(oldDocForeignKeyValue);
-
-    if (newDocForeignKeyValue && filterApplyNewValue)
-      increment(newDocForeignKeyValue);
+      if (newDocForeignKeyValue && filterApplyNewValue)
+        increment(newDocForeignKeyValue, 1);
+    },
+    remove: function(id) {
+      var doc = getDoc(id);
+      var foreignKeyValue = resolve(doc);
+      if (foreignKeyValue && filter(doc))
+        increment(foreignKeyValue, -1);
+    }
   });
-
-  collection.after.remove(function(userId, doc) {
-    var foreignKeyValue = resolveForeignKey(doc, foreignKey);
-    if (foreignKeyValue && applyFilter(doc, filter))
-      decrement(foreignKeyValue);
-  });
-};
+}
