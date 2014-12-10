@@ -7,6 +7,7 @@ Package.describe({
 
 Package.onUse(function(api) {
   api.use([
+    'check',
     'underscore@1.0.0',
     'mongo@1.0.6',
     'minimongo'
