@@ -1,7 +1,8 @@
 Package.describe({
   name: "hazio:counter-cache",
   summary: "Cache the counts of an associated collection",
-  version: "0.0.1"
+  version: "0.0.1",
+  git: "https://github.com/hazio/meteor-counter-cache.git"
 });
 
 Package.onUse(function(api) {
