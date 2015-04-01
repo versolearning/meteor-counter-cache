@@ -2,6 +2,7 @@ meteor-counter-cache
 ====================
 
 Cache the counts of an associated collection.
+Forked from https://github.com/percolatestudio/meteor-counter-cache/ to work with Meteor version 0.9 and above.
 
 ## Usage
 
