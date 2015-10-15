@@ -1,7 +1,7 @@
 Package.describe({
   summary: "Cache the counts of an associated collection",
-  version: "0.2.2",
-  git: "https://github.com/percolatestudio/meteor-counter-cache.git"
+  version: "0.0.4",
+  git: "https://github.com/hazio/meteor-counter-cache.git"
 });
 
 Package.onUse(function(api) {
