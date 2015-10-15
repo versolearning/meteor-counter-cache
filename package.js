@@ -10,7 +10,7 @@ Package.onUse(function(api) {
     'check@1.0.0',
     'underscore@1.0.0',
     'mongo@1.0.6',
-    'minimongo@3.5.6'
+    'minimongo@1.0.10'
   ]);
   api.add_files('counter-cache.js', ['client', 'server']);
   api.export('CounterCache');
