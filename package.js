@@ -1,8 +1,8 @@
 Package.describe({
-  name: 'dburles:counter-cache',
+  name: 'hazio:counter-cache',
   summary: "Cache the counts of an associated collection",
-  version: "0.2.1",
-  git: "https://github.com/percolatestudio/meteor-counter-cache.git"
+  version: "0.0.3",
+  git: "https://github.com/hazio/meteor-counter-cache.git"
 });
 
 Package.onUse(function(api) {
