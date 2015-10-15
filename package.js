@@ -1,19 +1,16 @@
 Package.describe({
-  name: 'hazio:counter-cache',
   summary: "Cache the counts of an associated collection",
-  version: "0.0.3",
-  git: "https://github.com/hazio/meteor-counter-cache.git"
+  version: "0.2.2",
+  git: "https://github.com/percolatestudio/meteor-counter-cache.git"
 });
 
 Package.onUse(function(api) {
   api.use([
-    'check@1.0.0',
+    'matb33:collection-hooks@0.7.11',
     'underscore@1.0.0',
-    'mongo@1.0.6',
-    'minimongo@1.0.10'
+    'mongo@1.0.6'
   ]);
   api.add_files('counter-cache.js', ['client', 'server']);
-  api.export('CounterCache');
 });
 
 Package.onTest(function(api) {
