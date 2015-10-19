@@ -1,12 +1,12 @@
 Package.describe({
   summary: "Cache the counts of an associated collection",
-  version: "0.2.1",
-  git: "https://github.com/percolatestudio/meteor-counter-cache.git"
+  version: "0.0.4",
+  git: "https://github.com/hazio/meteor-counter-cache.git"
 });
 
 Package.onUse(function(api) {
   api.use([
-    'mrt:collection-hooks@0.6.3',
+    'matb33:collection-hooks@0.7.11',
     'underscore@1.0.0',
     'mongo@1.0.6'
   ]);
