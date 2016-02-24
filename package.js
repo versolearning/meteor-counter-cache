@@ -1,8 +1,8 @@
 Package.describe({
-  name: 'dburles:counter-cache',
+  name: 'npvn:counter-cache',
   summary: "Cache the counts of an associated collection",
   version: "0.2.1",
-  git: "https://github.com/percolatestudio/meteor-counter-cache.git"
+  git: "https://github.com/npvn/meteor-counter-cache.git"
 });
 
 Package.onUse(function(api) {
@@ -11,7 +11,8 @@ Package.onUse(function(api) {
     'underscore@1.0.0',
     'mongo@1.0.6',
     'minimongo',
-    'ejson'
+    'ejson',
+    'ecmascript'
   ]);
   api.add_files('counter-cache.js', ['client', 'server']);
   api.export('CounterCache');

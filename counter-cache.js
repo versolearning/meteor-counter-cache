@@ -31,40 +31,71 @@ CounterCache = function(options) {
       filter: Match.Optional(Function)
     }
   });
-  
+
   // debug('setup counts of `' + collection._name + '` onto `' + this._name + '` with counter field `' + counterField + '`');
-  
+
   // private functions (going all crockford on this one)
-  var increment = function(_id, direction) {
-    var mod = {$inc: {}};
-    mod.$inc[options.target.counter] = direction || 1;
-    options.target.collection.update(_id, mod);
-  }
-  
+  const increment = function(_id, direction, skipAllCounterUpdate) {
+    direction = direction || 1;
+    let mod;
+    const counterName = options.target.counter;
+    const targetCollection = options.target.collection;
+    const targetDoc = (targetCollection.findOneIncludeArchived || targetCollection.findOne)(_id);
+
+    // In Verso we maintain two different counters for each object type: an original counter
+    // (e.g. responseCount) and an "allCounter" (e.g. responseCountAll). The latter counts all items,
+    // including archived ones.
+
+    // allCounter is needed only in some collections:
+    const allCounterEnabled = (targetCollection._name === 'classes' && counterName === 'flipCount')
+      || (targetCollection._name === 'users' && counterName === 'counts.flipCount')
+      || (targetCollection._name === 'flips' && counterName === 'responseCount')
+      || (targetCollection._name === 'flips' && counterName === 'commentCount');
+
+    // Make sure that allCounter is initialized and up-to-date with the original counter before we
+    // proceed further.
+    if (allCounterEnabled && targetDoc[counterName] && !targetDoc[`${counterName}All`]) {
+      mod = {$set: {}};
+      mod.$set[`${counterName}All`] = targetDoc[counterName];
+      targetCollection.update(_id, mod);
+    }
+
+    mod = {$inc: {}};
+    mod.$inc[counterName] = direction;
+
+    // By default, allCounter is always updated at the same time with the original counter.
+    // But there are cases when we need to skip this update (e.g. when we archive a response and
+    // want to preserve responseCountAll for campus views).
+    if (allCounterEnabled && !skipAllCounterUpdate)
+      mod.$inc[`${counterName}All`] = direction;
+
+    targetCollection.update(_id, mod);
+  };
+
   var getDoc = function(id) {
     var fields = {};
     // optimization -- if we don't have special foreignKey or filter functions,
     //   we know we only need the foreign key from the db
     if (! options.source.filter && ! _.isFunction(options.source.foreignKey))
       fields[options.source.foreignKey] = 1;
-    return options.source.collection.findOne(id, {fields: fields});
+    return options.source.collection.findOneIncludeArchived(id, {fields: fields});
   }
-  
+
   var resolve = function(doc) {
     return resolveForeignKey(doc, options.source.foreignKey);
   }
-  
+
   var filter = function(doc) {
     return applyFilter(doc, options.source.filter);
   }
-  
+
   _.extend(this, {
-    insert: function(doc) {
+    insert: function(doc, skipAllCounterUpdate) {
       var foreignKeyValue = resolve(doc);
       if (foreignKeyValue && filter(doc))
-        increment(foreignKeyValue, 1);
+        increment(foreignKeyValue, 1, skipAllCounterUpdate);
     },
-    update: function(id, modifier) {
+    update: function(id, modifier, skipAllCounterUpdate) {
       var oldDoc = getDoc(id);
 
       var newDoc = EJSON.clone(oldDoc);
@@ -76,21 +107,21 @@ CounterCache = function(options) {
       var filterApplyOldValue = filter(oldDoc);
       var filterApplyNewValue = filter(newDoc);
 
-      if (oldDocForeignKeyValue === newDocForeignKeyValue && 
+      if (oldDocForeignKeyValue === newDocForeignKeyValue &&
           filterApplyOldValue === filterApplyNewValue)
         return;
 
       if (oldDocForeignKeyValue && filterApplyOldValue)
-        increment(oldDocForeignKeyValue, -1);
+        increment(oldDocForeignKeyValue, -1, skipAllCounterUpdate);
 
       if (newDocForeignKeyValue && filterApplyNewValue)
-        increment(newDocForeignKeyValue, 1);
+        increment(newDocForeignKeyValue, 1, skipAllCounterUpdate);
     },
-    remove: function(id) {
+    remove: function(id, skipAllCounterUpdate) {
       var doc = getDoc(id);
       var foreignKeyValue = resolve(doc);
       if (foreignKeyValue && filter(doc))
-        increment(foreignKeyValue, -1);
+        increment(foreignKeyValue, -1, skipAllCounterUpdate);
     }
   });
 }
