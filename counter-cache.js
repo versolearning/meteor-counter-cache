@@ -40,7 +40,7 @@ CounterCache = function(options) {
     let mod;
     const counterName = options.target.counter;
     const targetCollection = options.target.collection;
-    const targetDoc = (targetCollection.findOneIncludeArchived || targetCollection.findOne)(_id);
+    const targetDoc = (targetCollection.findOneIncludeArchived || targetCollection.findOne).bind(targetCollection)(_id);
 
     // In Verso we maintain two different counters for each object type: an original counter
     // (e.g. responseCount) and an "allCounter" (e.g. responseCountAll). The latter counts all items,
@@ -72,13 +72,15 @@ CounterCache = function(options) {
     targetCollection.update(_id, mod);
   };
 
-  var getDoc = function(id) {
-    var fields = {};
+  const getDoc = function(id) {
+    const fields = {};
     // optimization -- if we don't have special foreignKey or filter functions,
     //   we know we only need the foreign key from the db
     if (! options.source.filter && ! _.isFunction(options.source.foreignKey))
       fields[options.source.foreignKey] = 1;
-    return options.source.collection.findOneIncludeArchived(id, {fields: fields});
+
+    return (options.source.collection.findOneIncludeArchived || options.source.collection.findOne)
+      .bind(options.source.collection)(id, {fields: fields});
   }
 
   var resolve = function(doc) {
