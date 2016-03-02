@@ -1,8 +1,7 @@
 Package.describe({
-  name: 'npvn:counter-cache',
+  name: 'counter-cache',
   summary: "Cache the counts of an associated collection",
-  version: "0.2.1",
-  git: "https://github.com/npvn/meteor-counter-cache.git"
+  version: "0.2.1"
 });
 
 Package.onUse(function(api) {

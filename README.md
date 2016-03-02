@@ -3,6 +3,11 @@ meteor-counter-cache
 
 Cache the counts of an associated collection.
 
+## Note
+
+The current implementation is developed specifically for Verso. Please feel free to make a fork
+and tweak the package to fit the requirements of your app.
+
 ## Usage
 
 All definitions should be made *server side only*.
