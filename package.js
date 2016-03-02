@@ -18,6 +18,6 @@ Package.onUse(function(api) {
 });
 
 Package.onTest(function(api) {
-  api.use(['tinytest', 'dburles:counter-cache', 'mongo', 'underscore']);
+  api.use(['tinytest', 'counter-cache', 'mongo', 'underscore']);
   api.add_files('counter-cache_tests.js', 'server');
 });
