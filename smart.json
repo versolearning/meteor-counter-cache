@@ -3,9 +3,9 @@
   "description": "Cache the counts of an associated collection",
   "homepage": "https://github.com/hazio/meteor-counter-cache",
   "author": "Jani Halmetoja (http://twitter.com/halmetoja)",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "git": "https://github.com/hazio/meteor-counter-cache.git",
   "packages": {
-    "collection-hooks": "0.7.11"
+    "collection-hooks": "0.8.3"
   }
 }
