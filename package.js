@@ -7,8 +7,8 @@ Package.describe({
 Package.onUse(function(api) {
   api.use([
     'matb33:collection-hooks@0.8.3',
-    'underscore@1.8.3',
-    'mongo@2.2.5'
+    'underscore@1.0.9',
+    'mongo@1.1.9_1'
   ]);
   api.add_files('counter-cache.js', ['client', 'server']);
 });
